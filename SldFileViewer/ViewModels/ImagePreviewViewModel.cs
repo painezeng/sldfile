@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -213,6 +214,60 @@ public partial class ImagePreviewViewModel : ObservableObject
             catch (Exception ex)
             {
                 _dialogService.ShowError("导出失败", $"保存图像失败:\n{ex.Message}");
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void ExportSvg()
+    {
+        if (VectorData == null || !VectorData.HasVectorData || _dialogService == null)
+        {
+            _dialogService?.ShowInformation("提示", "当前图纸无可用矢量 CAD 数据。");
+            return;
+        }
+
+        string defaultName = $"Drawing_{DateTime.Now:yyyyMMdd_HHmmss}.svg";
+        string filter = "SVG 矢量图形 (*.svg)|*.svg|所有文件 (*.*)|*.*";
+
+        if (_dialogService.ShowSaveFileDialog(defaultName, filter, out var savePath))
+        {
+            try
+            {
+                var svg = SldFile.Drawing.Export.DrawingSvgWriter.Write(VectorData, "DrawingSheet");
+                File.WriteAllText(savePath, svg, Encoding.UTF8);
+                _dialogService.ShowInformation("导出成功", $"工程图矢量 SVG 已成功保存至:\n{savePath}");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError("导出失败", $"保存 SVG 失败:\n{ex.Message}");
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void ExportDxf()
+    {
+        if (VectorData == null || !VectorData.HasVectorData || _dialogService == null)
+        {
+            _dialogService?.ShowInformation("提示", "当前图纸无可用矢量 CAD 数据。");
+            return;
+        }
+
+        string defaultName = $"Drawing_{DateTime.Now:yyyyMMdd_HHmmss}.dxf";
+        string filter = "AutoCAD DXF 文件 (*.dxf)|*.dxf|所有文件 (*.*)|*.*";
+
+        if (_dialogService.ShowSaveFileDialog(defaultName, filter, out var savePath))
+        {
+            try
+            {
+                var dxf = SldFile.Drawing.Export.DrawingDxfWriter.Write(VectorData, "DrawingSheet");
+                File.WriteAllText(savePath, dxf, Encoding.ASCII);
+                _dialogService.ShowInformation("导出成功", $"工程图 AutoCAD DXF 已成功保存至:\n{savePath}");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError("导出失败", $"保存 DXF 失败:\n{ex.Message}");
             }
         }
     }

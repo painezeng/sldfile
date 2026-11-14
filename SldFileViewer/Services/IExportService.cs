@@ -11,4 +11,6 @@ public interface IExportService
     void ExportMeshToGlb(DisplayMesh mesh, string filePath);
     void ExportParasolid(SwFile file, string filePath, int configIndex = 0);
     void ExportBomToCsv(IEnumerable<BomDisplayItem> items, string filePath);
+    void ExportDrawingToSvg(SldDrawing drawing, string filePath, int sheetIndex = 0);
+    void ExportDrawingToDxf(SldDrawing drawing, string filePath, int sheetIndex = 0);
 }

@@ -107,7 +107,8 @@ public sealed class DrawingVectorText
         double zMm = 0.0,
         string fontName = "",
         double heightMm = 2.5,
-        double angleRad = 0.0)
+        double angleRad = 0.0,
+        DrawingVectorTextCategory category = DrawingVectorTextCategory.SheetFormat)
     {
         RawText = rawText ?? string.Empty;
         CleanText = CleanRawText(RawText);
@@ -117,6 +118,7 @@ public sealed class DrawingVectorText
         FontName = string.IsNullOrWhiteSpace(fontName) ? "SimSun" : fontName.Trim();
         HeightMm = heightMm > 0.1 && heightMm < 50.0 ? heightMm : 2.5;
         AngleRad = angleRad;
+        Category = category;
     }
 
     private static string CleanRawText(string raw)

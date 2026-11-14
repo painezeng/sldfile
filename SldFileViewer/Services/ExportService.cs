@@ -42,6 +42,16 @@ public sealed class ExportService : IExportService
         }
     }
 
+    public void ExportDrawingToSvg(SldDrawing drawing, string filePath, int sheetIndex = 0)
+    {
+        drawing.ExportSheetSvg(sheetIndex, filePath);
+    }
+
+    public void ExportDrawingToDxf(SldDrawing drawing, string filePath, int sheetIndex = 0)
+    {
+        drawing.ExportSheetDxf(sheetIndex, filePath);
+    }
+
     private static string EscapeCsv(string? text)
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;

@@ -126,6 +126,28 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Export Vector SVG Button -->
+                        <Button Command="{Binding ExportSvgCommand}"
+                                Style="{StaticResource Style.Button.Toolbar}"
+                                Padding="8,4" Margin="2,0"
+                                ToolTip="导出工程图为标准 W3C 矢量 SVG 文件">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="VectorSquare" Width="12" Height="12" Foreground="{StaticResource Brush.Figma.Ink}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="导出 SVG" FontSize="11"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Export AutoCAD DXF Button -->
+                        <Button Command="{Binding ExportDxfCommand}"
+                                Style="{StaticResource Style.Button.Toolbar}"
+                                Padding="8,4" Margin="2,0"
+                                ToolTip="导出工程图为 AutoCAD ASCII DXF (CAD/CAM 兼容)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="FileCad" Width="12" Height="12" Foreground="{StaticResource Brush.Figma.Ink}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="导出 DXF" FontSize="11"/>
+                            </StackPanel>
+                        </Button>
+
                         <Rectangle Width="1" Height="16" Fill="{StaticResource Brush.Figma.Hairline}" Margin="8,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
@@ -172,6 +194,8 @@
                     <MenuItem Header="缩小 (-)" Command="{Binding ZoomOutCommand}" />
                     <Separator />
                     <MenuItem Header="导出预览图像..." Command="{Binding ExportImageCommand}" />
+                    <MenuItem Header="导出矢量图 (SVG)..." Command="{Binding ExportSvgCommand}" />
+                    <MenuItem Header="导出工程图 (DXF)..." Command="{Binding ExportDxfCommand}" />
                 </ContextMenu>
             </Grid.ContextMenu>
 
