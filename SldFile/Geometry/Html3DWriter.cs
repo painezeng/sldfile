@@ -266,6 +266,7 @@ public static class Html3DWriter
           <button id=""btnWireframe"" class=""btn"" title=""网格线框显示"">🕸️ 线框</button>
         </div>
         <button id=""btnEdges"" class=""btn active"" title=""切换 CAD 黑色特征边缘线"">📐 边线</button>
+        <button id=""btnMeasure"" class=""btn"" title=""三维尺寸测量工具 (点击模型表面两点测距)"">📏 测量</button>
         <button id=""btnScreenshot"" class=""btn"" title=""导出高清当前视角截图 (PNG)"">📸 截图</button>
         <button id=""btnFullscreen"" class=""btn"" title=""全屏查看"">⛶</button>
       </div>
@@ -277,6 +278,36 @@ public static class Html3DWriter
 
       <!-- 悬停构件信息提示 -->
       <div id=""partTooltip"" class=""tooltip""></div>
+
+      <!-- 3D 尺寸测量控制面板 -->
+      <div id=""measurePanel"" class=""measure-panel hidden"">
+        <div class=""measure-header"">
+          <span class=""measure-title"">📏 三维尺寸测量</span>
+          <button id=""btnCloseMeasure"" class=""icon-btn"" title=""关闭测量模式"">✕</button>
+        </div>
+        <div class=""measure-body"">
+          <div id=""measureTip"" class=""measure-tip"">点击模型表面捕捉第 1 个测量点</div>
+          <div id=""measureStats"" class=""measure-stats"">
+            <div class=""measure-main-val"">
+              <span class=""measure-val-lbl"">空间距离 (L):</span>
+              <span id=""valDistance"" class=""measure-dist-num"">0.00 mm</span>
+            </div>
+            <div class=""measure-components"">
+              <div class=""measure-pill dx""><span class=""pill-label"">ΔX</span><span id=""valDx"">0.00 mm</span></div>
+              <div class=""measure-pill dy""><span class=""pill-label"">ΔY</span><span id=""valDy"">0.00 mm</span></div>
+              <div class=""measure-pill dz""><span class=""pill-label"">ΔZ</span><span id=""valDz"">0.00 mm</span></div>
+            </div>
+          </div>
+          <div class=""measure-actions"">
+            <button id=""btnResetMeasure"" class=""tool-btn"" title=""清空当前测量线并重新测距 (Esc)"">清空重测 (Esc)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视口跟随 3D 坐标投影动态标牌 Badge -->
+      <div id=""measureBadge"" class=""measure-badge hidden"">
+        <span id=""badgeDistance"">0.00 mm</span>
+      </div>
 
       <!-- 左侧零部件树面板 (可折叠) -->
       <aside id=""partSidebar"" class=""sidebar open"">
@@ -504,6 +535,8 @@ html, body, #app {{ width: 100%; height: 100%; overflow: hidden; background: {bg
 .part-list {{ flex: 1; overflow-y: auto; padding: 6px; }}
 .part-item {{ display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s ease; }}
 .part-item:hover {{ background: rgba(255,255,255,0.06); }}
+.part-item.hovered {{ background: rgba(56, 189, 248, 0.15) !important; border-left: 3px solid #38BDF8; }}
+.part-item.selected {{ background: rgba(59, 130, 246, 0.25) !important; border: 1px solid #3B82F6; }}
 .part-item.isolated {{ background: rgba(59, 130, 246, 0.2); border: 1px solid #3B82F6; }}
 .part-left {{ display: flex; align-items: center; gap: 8px; overflow: hidden; }}
 .part-swatch {{ width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.2); }}
@@ -531,6 +564,32 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
 /* 悬停信息浮层 */
 .tooltip {{ position: absolute; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 12px; font-size: 11px; pointer-events: none; z-index: 200; display: none; transform: translate(12px, 12px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); line-height: 1.5; }}
 .tooltip .title {{ font-weight: 600; color: #60A5FA; margin-bottom: 2px; }}
+
+/* 3D 尺寸测量浮动控制面板 */
+.measure-panel {{ position: absolute; top: 16px; right: 16px; width: 260px; background: {cardBg}; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid {cardBorder}; border-radius: 10px; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,0.35); transition: opacity 0.2s ease, transform 0.2s ease; }}
+.measure-panel.hidden {{ opacity: 0; pointer-events: none; transform: translateY(-8px); }}
+.measure-header {{ display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid {cardBorder}; }}
+.measure-title {{ font-size: 13px; font-weight: 600; color: #38BDF8; }}
+.measure-body {{ padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }}
+.measure-tip {{ font-size: 11px; color: {textMuted}; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 6px; border-left: 3px solid #38BDF8; line-height: 1.4; }}
+.measure-stats {{ display: flex; flex-direction: column; gap: 8px; }}
+.measure-main-val {{ display: flex; align-items: baseline; justify-content: space-between; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px; }}
+.measure-val-lbl {{ font-size: 11px; color: {textMuted}; }}
+.measure-dist-num {{ font-size: 18px; font-weight: 700; color: #38BDF8; font-variant-numeric: tabular-nums; }}
+.measure-components {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }}
+.measure-pill {{ display: flex; flex-direction: column; align-items: center; padding: 4px 6px; border-radius: 6px; font-size: 10px; font-variant-numeric: tabular-nums; background: rgba(0,0,0,0.25); border: 1px solid {cardBorder}; }}
+.measure-pill .pill-label {{ font-size: 9px; font-weight: 700; margin-bottom: 2px; }}
+.measure-pill.dx .pill-label {{ color: #EF4444; }}
+.measure-pill.dy .pill-label {{ color: #10B981; }}
+.measure-pill.dz .pill-label {{ color: #3B82F6; }}
+.measure-actions {{ display: flex; justify-content: flex-end; }}
+
+/* 视口跟随 3D 标牌 Badge */
+.measure-badge {{ position: absolute; pointer-events: none; z-index: 55; background: rgba(15, 23, 42, 0.92); border: 1px solid #38BDF8; color: #38BDF8; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 3px 8px; border-radius: 12px; transform: translate(-50%, -100%); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); margin-top: -8px; }}
+.measure-badge.hidden {{ display: none; }}
+
+/* 移动端与触控手势优化 */
+#webglCanvas {{ touch-action: none; }}
 ";
     }
 
@@ -800,7 +859,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     updateSectionPlane();
   });
 
-  // --- 11. 零部件树与隔离模式 (Isolate / Visibility) ---
+  // --- 11. 零部件树与隔离模式 (Isolate / Visibility / 双向联动) ---
   const partListEl = document.getElementById('partList');
   let currentIsolatedId = null;
 
@@ -812,6 +871,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
       if (q && !p.name.toLowerCase().includes(q)) return;
 
       const row = document.createElement('div');
+      row.id = 'part-row-' + p.id;
       row.className = 'part-item' + (currentIsolatedId === p.id ? ' isolated' : '');
 
       row.innerHTML = `
@@ -822,7 +882,27 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
         <div class=""part-badge"">${p.triangles} 面</div>
       `;
 
-      row.addEventListener('click', () => {
+      // 悬停树节点：高亮对应 3D 构件 (天蓝色自发光)
+      row.addEventListener('mouseenter', () => {
+        if (p.mesh && p.mesh.material) {
+          p.mesh.material.emissive.setHex(0x38bdf8);
+          p.mesh.material.emissiveIntensity = 0.45;
+        }
+        row.classList.add('hovered');
+      });
+      row.addEventListener('mouseleave', () => {
+        if (p.mesh && p.mesh.material) {
+          p.mesh.material.emissive.setHex(0x000000);
+          p.mesh.material.emissiveIntensity = 0.0;
+        }
+        row.classList.remove('hovered');
+      });
+
+      // 点击树节点：隔离 / 恢复构件
+      row.addEventListener('click', (ev) => {
+        document.querySelectorAll('.part-item').forEach(el => el.classList.remove('selected'));
+        row.classList.add('selected');
+
         if (currentIsolatedId === p.id) {
           // 解除隔离
           currentIsolatedId = null;
@@ -894,7 +974,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     partSidebar.classList.add('open');
   });
 
-  // --- 12. 悬停提示 Tooltip ---
+  // --- 12. 悬停提示 Tooltip 与 3D 构件拾取反查树节点 ---
   const tooltip = document.getElementById('partTooltip');
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -908,6 +988,11 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
 
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    if (isMeasureActive) {
+      tooltip.style.display = 'none';
+      return;
+    }
 
     raycaster.setFromCamera(mouse, camera);
     const visibleMeshes = partRecords.filter(p => p.mesh.visible).map(p => p.mesh);
@@ -927,7 +1012,282 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     }
   });
 
-  // --- 13. 高清截图导出 ---
+  // 点击 3D 构件自动在左侧树中定位展开并平滑滚动高亮 (双向联动)
+  canvas.addEventListener('click', (e) => {
+    if (isMeasureActive) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const visibleMeshes = partRecords.filter(p => p.mesh.visible).map(p => p.mesh);
+    const intersects = raycaster.intersectObjects(visibleMeshes);
+
+    if (intersects.length > 0) {
+      const hitId = intersects[0].object.userData.id;
+      if (!partSidebar.classList.contains('open')) {
+        partSidebar.classList.add('open');
+      }
+      const targetRow = document.getElementById('part-row-' + hitId);
+      if (targetRow) {
+        document.querySelectorAll('.part-item').forEach(el => el.classList.remove('selected'));
+        targetRow.classList.add('selected');
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  });
+
+  // --- 13. 原生级 3D 尺寸测量工具 (点击两点/角点吸附/正交分量/Esc复位) ---
+  let isMeasureActive = false;
+  let measureStep = 0; // 0: 待选起点, 1: 橡皮筋实时预览, 2: 测距完成
+  let point1 = null;
+  let point2 = null;
+  let currentHoverPoint = null;
+
+  const btnMeasure = document.getElementById('btnMeasure');
+  const measurePanel = document.getElementById('measurePanel');
+  const btnCloseMeasure = document.getElementById('btnCloseMeasure');
+  const btnResetMeasure = document.getElementById('btnResetMeasure');
+  const measureTip = document.getElementById('measureTip');
+  const valDistance = document.getElementById('valDistance');
+  const valDx = document.getElementById('valDx');
+  const valDy = document.getElementById('valDy');
+  const valDz = document.getElementById('valDz');
+  const measureBadge = document.getElementById('measureBadge');
+  const badgeDistance = document.getElementById('badgeDistance');
+
+  // 测量场景对象组
+  const measureGroup = new THREE.Group();
+  scene.add(measureGroup);
+
+  const markerGeom = new THREE.SphereGeometry(maxDim * 0.008, 16, 16);
+
+  // 角点吸附指示小球 (亮黄色发光)
+  const snapMarker = new THREE.Mesh(
+    markerGeom,
+    new THREE.MeshBasicMaterial({ color: 0xFACC15, depthTest: false, transparent: true, opacity: 0.9 })
+  );
+  snapMarker.renderOrder = 9999;
+  snapMarker.visible = false;
+  measureGroup.add(snapMarker);
+
+  // 起点标记球 (翠绿色)
+  const pt1Marker = new THREE.Mesh(
+    markerGeom,
+    new THREE.MeshBasicMaterial({ color: 0x10B981, depthTest: false })
+  );
+  pt1Marker.renderOrder = 10000;
+  pt1Marker.visible = false;
+  measureGroup.add(pt1Marker);
+
+  // 终点标记球 (亮橙色)
+  const pt2Marker = new THREE.Mesh(
+    markerGeom,
+    new THREE.MeshBasicMaterial({ color: 0xF97316, depthTest: false })
+  );
+  pt2Marker.renderOrder = 10000;
+  pt2Marker.visible = false;
+  measureGroup.add(pt2Marker);
+
+  // 3D 测量主引线 (天蓝色)
+  const lineGeom = new THREE.BufferGeometry();
+  lineGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+  const dimensionLine = new THREE.Line(
+    lineGeom,
+    new THREE.LineBasicMaterial({ color: 0x38BDF8, linewidth: 2, depthTest: false })
+  );
+  dimensionLine.renderOrder = 9998;
+  dimensionLine.visible = false;
+  measureGroup.add(dimensionLine);
+
+  // 正交辅助线 (X: 红, Y: 绿, Z: 蓝)
+  function createOrthoLine(hexColor) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    const m = new THREE.LineBasicMaterial({ color: hexColor, linewidth: 1.5, depthTest: false, transparent: true, opacity: 0.75 });
+    const l = new THREE.Line(g, m);
+    l.renderOrder = 9997;
+    l.visible = false;
+    measureGroup.add(l);
+    return l;
+  }
+  const orthoLineX = createOrthoLine(0xEF4444);
+  const orthoLineY = createOrthoLine(0x10B981);
+  const orthoLineZ = createOrthoLine(0x3B82F6);
+
+  // 角点吸附 (Vertex Snapping)：在屏幕 18px 范围内优先捕捉三角面角点
+  function getSnappedPoint(hit, clientX, clientY, rect) {
+    if (!hit || !hit.face || !hit.object) return null;
+    const geom = hit.object.geometry;
+    const pos = geom.attributes.position;
+    if (!pos) return hit.point;
+
+    const vA = new THREE.Vector3().fromBufferAttribute(pos, hit.face.a).applyMatrix4(hit.object.matrixWorld);
+    const vB = new THREE.Vector3().fromBufferAttribute(pos, hit.face.b).applyMatrix4(hit.object.matrixWorld);
+    const vC = new THREE.Vector3().fromBufferAttribute(pos, hit.face.c).applyMatrix4(hit.object.matrixWorld);
+
+    function toScreen(v) {
+      const p = v.clone().project(camera);
+      return new THREE.Vector2((p.x * 0.5 + 0.5) * rect.width + rect.left, (-(p.y * 0.5) + 0.5) * rect.height + rect.top);
+    }
+
+    const mouseScreen = new THREE.Vector2(clientX, clientY);
+    const sA = toScreen(vA);
+    const sB = toScreen(vB);
+    const sC = toScreen(vC);
+
+    const dA = mouseScreen.distanceTo(sA);
+    const dB = mouseScreen.distanceTo(sB);
+    const dC = mouseScreen.distanceTo(sC);
+
+    const snapThreshold = 18; // 屏幕像素阈值
+    let best = null;
+    let minD = snapThreshold;
+    if (dA < minD) { minD = dA; best = vA; }
+    if (dB < minD) { minD = dB; best = vB; }
+    if (dC < minD) { minD = dC; best = vC; }
+
+    return best ? best : hit.point;
+  }
+
+  function updateMeasureUI(p1, p2) {
+    const dist = p1.distanceTo(p2);
+    const dx = Math.abs(p2.x - p1.x);
+    const dy = Math.abs(p2.y - p1.y);
+    const dz = Math.abs(p2.z - p1.z);
+
+    valDistance.textContent = dist.toFixed(2) + ' mm';
+    valDx.textContent = dx.toFixed(2) + ' mm';
+    valDy.textContent = dy.toFixed(2) + ' mm';
+    valDz.textContent = dz.toFixed(2) + ' mm';
+    badgeDistance.textContent = dist.toFixed(2) + ' mm';
+
+    // 更新 3D 尺寸主线
+    const posAttr = dimensionLine.geometry.attributes.position;
+    posAttr.setXYZ(0, p1.x, p1.y, p1.z);
+    posAttr.setXYZ(1, p2.x, p2.y, p2.z);
+    posAttr.needsUpdate = true;
+    dimensionLine.visible = true;
+
+    // 更新 XYZ 正交辅助线
+    const xAttr = orthoLineX.geometry.attributes.position;
+    xAttr.setXYZ(0, p1.x, p1.y, p1.z);
+    xAttr.setXYZ(1, p2.x, p1.y, p1.z);
+    xAttr.needsUpdate = true;
+    orthoLineX.visible = dx > 0.01;
+
+    const yAttr = orthoLineY.geometry.attributes.position;
+    yAttr.setXYZ(0, p2.x, p1.y, p1.z);
+    yAttr.setXYZ(1, p2.x, p2.y, p1.z);
+    yAttr.needsUpdate = true;
+    orthoLineY.visible = dy > 0.01;
+
+    const zAttr = orthoLineZ.geometry.attributes.position;
+    zAttr.setXYZ(0, p2.x, p2.y, p1.z);
+    zAttr.setXYZ(1, p2.x, p2.y, p2.z);
+    zAttr.needsUpdate = true;
+    orthoLineZ.visible = dz > 0.01;
+  }
+
+  function resetMeasure() {
+    measureStep = 0;
+    point1 = null;
+    point2 = null;
+    currentHoverPoint = null;
+    snapMarker.visible = false;
+    pt1Marker.visible = false;
+    pt2Marker.visible = false;
+    dimensionLine.visible = false;
+    orthoLineX.visible = false;
+    orthoLineY.visible = false;
+    orthoLineZ.visible = false;
+    measureBadge.classList.add('hidden');
+    measureTip.textContent = '点击模型表面捕捉第 1 个测量点';
+    valDistance.textContent = '0.00 mm';
+    valDx.textContent = '0.00 mm';
+    valDy.textContent = '0.00 mm';
+    valDz.textContent = '0.00 mm';
+  }
+
+  function toggleMeasure(active) {
+    isMeasureActive = active;
+    btnMeasure.classList.toggle('active', isMeasureActive);
+    measurePanel.classList.toggle('hidden', !isMeasureActive);
+    canvas.style.cursor = isMeasureActive ? 'crosshair' : 'default';
+    resetMeasure();
+  }
+
+  btnMeasure.addEventListener('click', () => toggleMeasure(!isMeasureActive));
+  btnCloseMeasure.addEventListener('click', () => toggleMeasure(false));
+  btnResetMeasure.addEventListener('click', resetMeasure);
+
+  // 鼠标移动检测捕捉
+  window.addEventListener('mousemove', (e) => {
+    if (!isMeasureActive) return;
+    const rect = canvas.getBoundingClientRect();
+    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+      snapMarker.visible = false;
+      return;
+    }
+
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const visibleMeshes = partRecords.filter(p => p.mesh.visible).map(p => p.mesh);
+    const intersects = raycaster.intersectObjects(visibleMeshes);
+
+    if (intersects.length > 0) {
+      const snapped = getSnappedPoint(intersects[0], e.clientX, e.clientY, rect);
+      currentHoverPoint = snapped;
+      snapMarker.position.copy(snapped);
+      snapMarker.visible = true;
+
+      // 橡皮筋实时测量预览
+      if (measureStep === 1 && point1) {
+        updateMeasureUI(point1, snapped);
+      }
+    } else {
+      snapMarker.visible = false;
+      currentHoverPoint = null;
+    }
+  });
+
+  // 点击选择测量点
+  canvas.addEventListener('click', (e) => {
+    if (!isMeasureActive || !currentHoverPoint) return;
+
+    if (measureStep === 0) {
+      // 确定起点
+      point1 = currentHoverPoint.clone();
+      pt1Marker.position.copy(point1);
+      pt1Marker.visible = true;
+      measureStep = 1;
+      measureTip.textContent = '请点击选择第 2 个测量点 (按 Esc 清空)';
+    } else if (measureStep === 1) {
+      // 确定终点
+      point2 = currentHoverPoint.clone();
+      pt2Marker.position.copy(point2);
+      pt2Marker.visible = true;
+      measureStep = 2;
+      snapMarker.visible = false;
+      updateMeasureUI(point1, point2);
+      measureTip.textContent = '测量完成。按 Esc 清空并可重新测距';
+    }
+  });
+
+  // 快捷键 Esc 清空或退出
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (measureStep > 0) {
+        resetMeasure();
+      } else if (isMeasureActive) {
+        toggleMeasure(false);
+      }
+    }
+  });
+
+  // --- 14. 高清截图导出 ---
   document.getElementById('btnScreenshot').addEventListener('click', () => {
     renderer.render(scene, camera);
     const url = canvas.toDataURL('image/png');
@@ -937,7 +1297,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     a.click();
   });
 
-  // --- 14. 全屏切换 ---
+  // --- 15. 全屏切换 ---
   document.getElementById('btnFullscreen').addEventListener('click', () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
@@ -946,7 +1306,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     }
   });
 
-  // --- 15. 窗口响应与渲染循环 ---
+  // --- 16. 窗口响应与渲染循环 ---
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
@@ -956,6 +1316,29 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
   function animate() {
     requestAnimationFrame(animate);
     controls.update();
+
+    // 动态投影更新测量 Badge 的屏幕位置
+    if (isMeasureActive && (measureStep === 1 || measureStep === 2) && point1) {
+      const p2 = measureStep === 2 ? point2 : currentHoverPoint;
+      if (p2) {
+        const mid = new THREE.Vector3().addVectors(point1, p2).multiplyScalar(0.5);
+        const proj = mid.clone().project(camera);
+        if (proj.z < 1) {
+          const sx = (proj.x * 0.5 + 0.5) * container.clientWidth;
+          const sy = (-(proj.y * 0.5) + 0.5) * container.clientHeight;
+          measureBadge.style.left = sx + 'px';
+          measureBadge.style.top = sy + 'px';
+          measureBadge.classList.remove('hidden');
+        } else {
+          measureBadge.classList.add('hidden');
+        }
+      } else {
+        measureBadge.classList.add('hidden');
+      }
+    } else {
+      measureBadge.classList.add('hidden');
+    }
+
     renderer.render(scene, camera);
   }
   animate();

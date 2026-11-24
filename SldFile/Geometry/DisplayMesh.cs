@@ -156,6 +156,39 @@ public sealed class DisplayMesh
     {
         Geometry.Html3DWriter.Export(this, filePath, modelTitle, options);
     }
+
+    /// <summary>
+    /// Exports this mesh as a Wavefront OBJ file to the specified file path.
+    /// </summary>
+    public void ExportObj(string filePath, float scale = 1.0f)
+    {
+        string? dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        using var sw = new StreamWriter(filePath, false, Encoding.UTF8);
+        WriteObj(sw, scale);
+    }
+
+    /// <summary>
+    /// Exports this mesh as a binary STL file to the specified file path.
+    /// </summary>
+    public void ExportStl(string filePath, float scale = 1.0f)
+    {
+        string? dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        using var fs = File.Create(filePath);
+        WriteStl(fs, scale);
+    }
+
+    /// <summary>
+    /// Exports this mesh as a binary glTF 2.0 (.glb) container to the specified file path.
+    /// </summary>
+    public void ExportGlb(string filePath, float scale = 0.001f)
+    {
+        string? dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        using var fs = File.Create(filePath);
+        WriteGlb(fs, scale);
+    }
 }
 
 /// <summary>

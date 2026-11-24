@@ -242,6 +242,16 @@ public class DisplayMeshTests
         Assert.Contains("btnSectionToggle", html);
         Assert.Contains("fitCamera", html);
         Assert.Contains("btnScreenshot", html);
+
+        // 5. 验证原生级 3D 尺寸测量工具与树-模型联动逻辑已嵌入
+        Assert.Contains("btnMeasure", html);
+        Assert.Contains("measurePanel", html);
+        Assert.Contains("measureBadge", html);
+        Assert.Contains("valDistance", html);
+        Assert.Contains("valDx", html);
+        Assert.Contains("getSnappedPoint", html);
+        Assert.Contains("part-row-", html);
+        Assert.Contains("emissive", html);
     }
 
     [Fact]

@@ -22,6 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\SldFile\SldFile.csproj" />
+        <ProjectReference Include="..\SldFile.Cli\SldFile.Cli.csproj" />
     </ItemGroup>
 
     <!-- Copy TestFiles/ into the build output so tests can locate them via a simple relative path -->
