@@ -381,13 +381,13 @@ public abstract partial class SwFile
             // 1. 优先尝试从装配体内嵌烘焙的最新网格字典中获取原型几何
             if (embeddedPrototypeMeshes != null)
             {
-                if ((string.IsNullOrEmpty(comp.InstanceName) || !embeddedPrototypeMeshes.TryGetValue(comp.InstanceName, out childMesh)) &&
+                if ((string.IsNullOrEmpty(comp.InstanceName) || !embeddedPrototypeMeshes.TryGetValue(comp.InstanceName!, out childMesh)) &&
                     (string.IsNullOrEmpty(compFileName) || !embeddedPrototypeMeshes.TryGetValue(compFileName, out childMesh)) &&
-                    (string.IsNullOrEmpty(comp.Name) || !embeddedPrototypeMeshes.TryGetValue(comp.Name, out childMesh)))
+                    (string.IsNullOrEmpty(comp.Name) || !embeddedPrototypeMeshes.TryGetValue(comp.Name!, out childMesh)))
                 {
                     if (!string.IsNullOrEmpty(comp.Name))
                     {
-                        int caretIdx = comp.Name.IndexOf('^');
+                        int caretIdx = comp.Name!.IndexOf('^');
                         if (caretIdx > 0)
                         {
                             embeddedPrototypeMeshes.TryGetValue(comp.Name.Substring(0, caretIdx), out childMesh);
@@ -424,36 +424,38 @@ public abstract partial class SwFile
                 }
                 else if ((comp.IsVirtual || !File.Exists(actualPath)) && !string.IsNullOrEmpty(comp.Name))
                 {
-                    // 虚拟组件回退：尝试从装配体自身内嵌的 VirtualComp/ 文档流中提取几何
-                    string vName = comp.Name;
-                    int caretIdx = vName.IndexOf('^');
-                    if (caretIdx > 0) vName = vName.Substring(0, caretIdx);
-                    byte[]? vBytes = GetVirtualComponentBytes(vName);
-                    if (vBytes == null && caretIdx > 0)
+                    // 虚拟组件回退：优先查缓存，未命中时从装配体自身内嵌的 VirtualComp/ 文档流中提取几何
+                    string compName = comp.Name!;
+                    string virtualCacheKey = $"virtual:{compName}";
+                    if (!cachedPartMeshes.TryGetValue(virtualCacheKey, out childMesh))
                     {
-                        vBytes = GetVirtualComponentBytes(comp.Name);
-                    }
-                    if (vBytes != null && vBytes.Length > 0)
-                    {
-                        string tempExt = (comp.FilePath ?? string.Empty).EndsWith(".sldasm", StringComparison.OrdinalIgnoreCase) ? ".sldasm" : ".sldprt";
-                        string tempFile = Path.Combine(Path.GetTempPath(), $"SldVirtual_{Guid.NewGuid():N}{tempExt}");
-                        try
+                        string vName = compName;
+                        int caretIdx = vName.IndexOf('^');
+                        if (caretIdx > 0) vName = vName.Substring(0, caretIdx);
+                        byte[]? vBytes = GetVirtualComponentBytes(vName);
+                        if (vBytes == null && caretIdx > 0)
                         {
-                            File.WriteAllBytes(tempFile, vBytes);
-                            using var vSw = SwFile.Open(tempFile, readOnly: true);
-                            childMesh = vSw.GetDisplayMesh();
-                            if (childMesh != null)
+                            vBytes = GetVirtualComponentBytes(compName);
+                        }
+                        if (vBytes != null && vBytes.Length > 0)
+                        {
+                            string tempExt = (comp.FilePath ?? string.Empty).EndsWith(".sldasm", StringComparison.OrdinalIgnoreCase) ? ".sldasm" : ".sldprt";
+                            string tempFile = Path.Combine(Path.GetTempPath(), $"SldVirtual_{Guid.NewGuid():N}{tempExt}");
+                            try
                             {
-                                lock (cachedPartMeshes)
+                                File.WriteAllBytes(tempFile, vBytes);
+                                using var vSw = SwFile.Open(tempFile, readOnly: true);
+                                childMesh = vSw.GetDisplayMesh();
+                                if (childMesh != null)
                                 {
-                                    cachedPartMeshes[comp.Name] = childMesh;
+                                    cachedPartMeshes[virtualCacheKey] = childMesh;
                                 }
                             }
-                        }
-                        catch { }
-                        finally
-                        {
-                            try { if (File.Exists(tempFile)) File.Delete(tempFile); } catch { }
+                            catch { }
+                            finally
+                            {
+                                try { if (File.Exists(tempFile)) File.Delete(tempFile); } catch { }
+                            }
                         }
                     }
                 }
@@ -502,7 +504,7 @@ public abstract partial class SwFile
                 allEdges.Add((e0 + vStart, e1 + vStart));
             }
 
-            var surfRef = new[] { new DisplaySurfaceReference { Identity = comp.InstanceName } };
+            var surfRef = new[] { new DisplaySurfaceReference { Identity = comp.InstanceName ?? comp.Name ?? string.Empty } };
 
             if (childMesh.Parts != null && childMesh.Parts.Count > 0)
             {
