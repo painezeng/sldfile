@@ -108,7 +108,7 @@ public static class InfoCommand
             string author = file.Metadata?.Author ?? file.SolidWorksInformation?.Author ?? string.Empty;
             string title = file.Metadata?.Title ?? file.SolidWorksInformation?.Title ?? string.Empty;
             string comments = file.Metadata?.Comments ?? file.SolidWorksInformation?.Comments ?? string.Empty;
-            string versionStr = file.Biography?.ServicePackVersion ?? "SolidWorks";
+            string versionStr = FormatSolidWorksVersion(file);
             DateTimeOffset? createdDate = file.Metadata?.CreatedAt;
             DateTimeOffset? lastSavedDate = file.Metadata?.LastSavedAt;
 
@@ -254,5 +254,41 @@ public static class InfoCommand
                 count += CountFlattened(n.Children);
         }
         return count;
+    }
+
+    private static string FormatSolidWorksVersion(SwFile file)
+    {
+        int maxMoVersion = 0;
+        if (file.RawStreams != null)
+        {
+            foreach (var key in file.RawStreams.Keys)
+            {
+                const string prefix = "_MO_VERSION_";
+                int idx = key.IndexOf(prefix, StringComparison.Ordinal);
+                if (idx < 0) continue;
+                int start = idx + prefix.Length;
+                int slash = key.IndexOf('/', start);
+                string numStr = slash > start ? key.Substring(start, slash - start) : key.Substring(start);
+                if (int.TryParse(numStr, out int ver) && ver > maxMoVersion)
+                {
+                    maxMoVersion = ver;
+                }
+            }
+        }
+
+        string? yearStr = (maxMoVersion >= 1000 && maxMoVersion % 1000 == 0)
+            ? $"SolidWorks {2007 + (maxMoVersion / 1000)}"
+            : null;
+        string? spStr = string.IsNullOrWhiteSpace(file.Biography?.ServicePackVersion)
+            ? null
+            : file.Biography!.ServicePackVersion.Trim();
+
+        if (!string.IsNullOrEmpty(yearStr) && !string.IsNullOrEmpty(spStr))
+            return $"{yearStr} ({spStr})";
+        if (!string.IsNullOrEmpty(yearStr))
+            return yearStr!;
+        if (!string.IsNullOrEmpty(spStr))
+            return spStr!;
+        return "SolidWorks";
     }
 }

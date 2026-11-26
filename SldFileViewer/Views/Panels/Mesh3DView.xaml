@@ -115,6 +115,10 @@
                                 <MenuItem Header="消除隐藏线白模 (Technical Illustration)" Command="{Binding SetDisplayStyleCommand}" CommandParameter="{x:Static models:ModelDisplayStyle.TechnicalWhite}">
                                     <MenuItem.Icon><iconPacks:PackIconMaterial Kind="FileDocumentOutline" Width="14" Height="14"/></MenuItem.Icon>
                                 </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="按零件区分着色 (Distinct Part Colors)" IsCheckable="True" IsChecked="{Binding UseDistinctPartColors, Mode=TwoWay}">
+                                    <MenuItem.Icon><iconPacks:PackIconMaterial Kind="PaletteSwatchOutline" Width="14" Height="14"/></MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

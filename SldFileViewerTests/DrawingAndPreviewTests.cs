@@ -428,9 +428,10 @@ public class DrawingAndPreviewTests
                 Assert.NotNull(bestImg);
 
                 // Dump all texts
+                Assert.NotNull(sheet0.VectorData);
                 using (var sw = new StreamWriter(@"C:\Users\HP\.gemini\antigravity\brain\eed5a36f-5e8b-4a85-bde9-407779624be2\all_texts_dump.txt"))
                 {
-                    foreach (var t in sheet0.VectorData.Texts)
+                    foreach (var t in sheet0.VectorData!.Texts)
                     {
                         sw.WriteLine($"Text: '{t.CleanText}', X={t.X:F2}, Y={t.Y:F2}, Ang={t.AngleRad:F2}, Cat={t.Category}, Note={t.IsSheetLevelNote}");
                     }

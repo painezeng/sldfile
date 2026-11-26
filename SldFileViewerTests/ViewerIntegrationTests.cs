@@ -462,7 +462,9 @@ public class ViewerIntegrationTests
                         () => { }, System.Windows.Threading.DispatcherPriority.Background);
                     System.Threading.Thread.Sleep(10);
                 }
+#pragma warning disable xUnit1031
                 loadTask.GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
                 Assert.True(mainVm.IsFileLoaded);
 
                 var root = treeVm.RootNodes[0];
@@ -570,7 +572,9 @@ public class ViewerIntegrationTests
                 var docService = new SwDocumentService();
                 var treeVm = new DocumentTreeViewModel(docService);
 
+#pragma warning disable xUnit1031
                 var sw = docService.OpenAsync(_cubePart).GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
                 Assert.NotNull(sw);
                 treeVm.BuildTree(sw!, _cubePart);
 

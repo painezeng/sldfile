@@ -416,7 +416,7 @@ public class AssemblyExplodeAndIsolateTests
         Assert.True(plate1_verts.Min(v => v.Y) <= -325f && plate1_verts.Max(v => v.Y) >= -325f, "Plate 1 Y should attach right under frame tube");
 
         // 验证 4 个轮子位置与 4 个安装板贴合
-        var frontWheel = stitched.Parts.First(p => p.AppearanceName.Contains("6寸定向轮-9"));
+        var frontWheel = stitched.Parts.First(p => p.AppearanceName != null && p.AppearanceName.Contains("6寸定向轮-9"));
         var fWheelVerts = stitched.Positions.Skip(frontWheel.VertexStart).Take(frontWheel.VertexCount).ToList();
         float fWheelCenterZ = (fWheelVerts.Min(v => v.Z) + fWheelVerts.Max(v => v.Z)) / 2f;
         Assert.True(Math.Abs(fWheelCenterZ - (-232.5f)) < 15f, "Front wheel center should align with front castor plate");

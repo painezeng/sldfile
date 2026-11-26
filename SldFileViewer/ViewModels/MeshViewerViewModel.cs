@@ -79,6 +79,27 @@ private bool _showEdges = true;
 private ModelDisplayStyle _displayStyle = ModelDisplayStyle.ShadedWithEdges;
 
 [ObservableProperty]
+private bool _useDistinctPartColors;
+
+private static readonly uint[] DistinctComponentPalette =
+[
+    0xFFE5C94F, // 金黄
+    0xFF38BDF8, // 天蓝
+    0xFFE11D48, // 猩红
+    0xFF10B981, // 翠绿
+    0xFF8B5CF6, // 亮紫
+    0xFFF59E0B, // 琥珀橙
+    0xFF14B8A6, // 青绿
+    0xFF6366F1, // 靛蓝
+    0xFF64748B, // 钢灰
+    0xFFF43F5E, // 玫瑰红
+    0xFF06B6D4, // 青色
+    0xFFA855F7, // 浅紫
+    0xFF84CC16, // 黄绿
+    0xFFEC4899  // 浅粉
+];
+
+[ObservableProperty]
 private StandardViewType _currentStandardView = StandardViewType.Isometric;
 
 public event Action<StandardViewType>? RequestStandardView;
@@ -575,6 +596,12 @@ partial void OnDisplayStyleChanged(ModelDisplayStyle value)
     {
         ShowEdges = true;
     }
+}
+
+partial void OnUseDistinctPartColorsChanged(bool value)
+{
+    RebuildWpfMeshes();
+    HighlightComponent(SelectedAssemblyComponent);
 }
 
 partial void OnIsExplodeModeEnabledChanged(bool value)
@@ -1492,7 +1519,17 @@ BuildSectionPlaneMeshes(size, axisDir, offset);
                 bool isGhost = IsIsolated && (comp == null || IsolatedComponent == null || !IsComponentOrChild(comp, IsolatedComponent));
                 var targetIndices = (isGhost && ghostIndices != null) ? ghostIndices : triangleIndices;
 
-                uint colorKey = part.Color ?? (mesh.DefaultColor ?? 0xFF919EAC);
+                uint colorKey;
+                if (UseDistinctPartColors)
+                {
+                    string distinctKey = comp?.Name ?? part.AppearanceName ?? part.Id ?? pIdx.ToString();
+                    int hash = StringComparer.Ordinal.GetHashCode(distinctKey);
+                    colorKey = DistinctComponentPalette[Math.Abs(hash) % DistinctComponentPalette.Length];
+                }
+                else
+                {
+                    colorKey = part.Color ?? (mesh.DefaultColor ?? 0xFF919EAC);
+                }
                 Int32Collection? cIndices = null;
                 if (!isGhost)
                 {

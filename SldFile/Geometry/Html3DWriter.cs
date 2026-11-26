@@ -266,6 +266,7 @@ public static class Html3DWriter
           <button id=""btnWireframe"" class=""btn"" title=""网格线框显示"">🕸️ 线框</button>
         </div>
         <button id=""btnEdges"" class=""btn active"" title=""切换 CAD 黑色特征边缘线"">📐 边线</button>
+        <button id=""btnDistinctColors"" class=""btn"" title=""切换按零件区分着色 / 原生材质色"">🌈 区分色</button>
         <button id=""btnMeasure"" class=""btn"" title=""三维尺寸测量工具 (点击模型表面两点测距)"">📏 测量</button>
         <button id=""btnScreenshot"" class=""btn"" title=""导出高清当前视角截图 (PNG)"">📸 截图</button>
         <button id=""btnFullscreen"" class=""btn"" title=""全屏查看"">⛶</button>
@@ -677,6 +678,18 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     geom.setIndex(new THREE.BufferAttribute(indices, 1));
 
     const color = new THREE.Color(p.color || '#919EAC');
+    const DISTINCT_PALETTE = [
+      '#E5C94F', '#38BDF8', '#E11D48', '#10B981', '#8B5CF6', '#F59E0B', '#14B8A6',
+      '#6366F1', '#64748B', '#F43F5E', '#06B6D4', '#A855F7', '#84CC16', '#EC4899'
+    ];
+    let nameHash = 0;
+    const keyStr = p.name || p.id || '';
+    for (let hi = 0; hi < keyStr.length; hi++) {
+      nameHash = ((nameHash << 5) - nameHash + keyStr.charCodeAt(hi)) | 0;
+    }
+    const distinctHex = DISTINCT_PALETTE[Math.abs(nameHash) % DISTINCT_PALETTE.length];
+    const distinctColor = new THREE.Color(distinctHex);
+
     const mat = new THREE.MeshStandardMaterial({
       color: color,
       metalness: 0.25,
@@ -701,9 +714,11 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
       id: p.id,
       name: p.name,
       colorHex: p.color,
+      distinctHex: distinctHex,
       triangles: p.triangles,
       mesh: mesh,
       origColor: color,
+      distinctColor: distinctColor,
       initialPos: mesh.position.clone(),
       explodeDir: explodeDir
     });
@@ -756,8 +771,9 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
     controls.update();
   };
 
-  // --- 8. 显示样式切换 (着色 / 白模 / 线框) ---
+  // --- 8. 显示样式切换 (着色 / 白模 / 线框 / 零件区分色) ---
   let currentStyle = 'shaded';
+  let useDistinctColors = false;
   function updateDisplayStyle(style) {
     currentStyle = style;
     document.getElementById('btnShaded').classList.toggle('active', style === 'shaded');
@@ -766,23 +782,36 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
 
     partRecords.forEach(p => {
       const mat = p.mesh.material;
+      const targetColor = useDistinctColors ? p.distinctColor : p.origColor;
       if (style === 'wireframe') {
         mat.wireframe = true;
-        mat.color.copy(p.origColor);
+        mat.color.copy(targetColor);
       } else if (style === 'white') {
         mat.wireframe = false;
         mat.color.set(0xf5f7fa);
       } else {
         mat.wireframe = false;
-        mat.color.copy(p.origColor);
+        mat.color.copy(targetColor);
       }
       mat.needsUpdate = true;
+
+      const swatch = document.querySelector(`#part-row-${CSS.escape(p.id)} .part-swatch`);
+      if (swatch) {
+        swatch.style.background = useDistinctColors ? p.distinctHex : p.colorHex;
+      }
     });
   }
 
   document.getElementById('btnShaded').addEventListener('click', () => updateDisplayStyle('shaded'));
   document.getElementById('btnWhite').addEventListener('click', () => updateDisplayStyle('white'));
   document.getElementById('btnWireframe').addEventListener('click', () => updateDisplayStyle('wireframe'));
+
+  const btnDistinctColors = document.getElementById('btnDistinctColors');
+  btnDistinctColors.addEventListener('click', () => {
+    useDistinctColors = !useDistinctColors;
+    btnDistinctColors.classList.toggle('active', useDistinctColors);
+    updateDisplayStyle(currentStyle);
+  });
 
   // 边线开关
   const btnEdges = document.getElementById('btnEdges');
@@ -876,7 +905,7 @@ input[type=range]::-webkit-slider-thumb {{ -webkit-appearance: none; appearance:
 
       row.innerHTML = `
         <div class=""part-left"">
-          <div class=""part-swatch"" style=""background: ${p.colorHex}""></div>
+          <div class=""part-swatch"" style=""background: ${useDistinctColors ? p.distinctHex : p.colorHex}""></div>
           <span class=""part-name"" title=""${p.name}"">${p.name}</span>
         </div>
         <div class=""part-badge"">${p.triangles} 面</div>
